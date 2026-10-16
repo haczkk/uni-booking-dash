@@ -91,7 +91,6 @@ export function PresidentView() {
   };
 
   const cancel = async (id: number) => {
-    if (!confirmToast()) return;
     try {
       await post(`/reservations/${id}/cancel`, { presidentId: user!.id });
       toast.success("Reservation cancelled.");
@@ -250,8 +249,3 @@ export function PresidentView() {
   );
 }
 
-// Lightweight confirm without native alerts is handled by the dedicated ConfirmDialog in admin;
-// for a single cancel action we accept the click directly.
-function confirmToast() {
-  return true;
-}
