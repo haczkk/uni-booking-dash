@@ -62,7 +62,10 @@ export function PresidentView() {
 
   const submit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (end <= start) return toast.error("End time must be after start time.");
+    if (end <= start) {
+      toast.error("End time must be after start time.");
+      return;
+    }
     const f = new FormData(e.currentTarget);
     setBusy(true);
     try {
