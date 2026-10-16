@@ -1,6 +1,6 @@
 // Client for the Spring Boot REST API. Base URL is configurable via VITE_API_BASE.
 export const API_BASE: string =
-  (import.meta.env.VITE_API_BASE as string | undefined) ?? "http://localhost:8080/api";
+  (import.meta.env["VITE_API_BASE"] as string | undefined) ?? "http://localhost:8080/api";
 
 export type Role = "CLASS_PRESIDENT" | "ADMIN" | "SUPER_ADMIN";
 
@@ -86,7 +86,7 @@ export class ApiError extends Error {}
 /** Fetch JSON from the API. Throws ApiError with the server's `error` message on failure. */
 export async function api<T = any>(
   path: string,
-  opts: { method?: string; body?: unknown; query?: Record<string, string | number | boolean | undefined> } = {},
+  opts: { method?: string; body?: unknown; query?: Record<string, any> | undefined } = {},
 ): Promise<T> {
   const qs = opts.query
     ? "?" +
@@ -100,7 +100,7 @@ export async function api<T = any>(
     res = await fetch(`${API_BASE}${path}${qs}`, {
       method: opts.method ?? (opts.body !== undefined ? "POST" : "GET"),
       headers: opts.body !== undefined ? { "Content-Type": "application/json" } : undefined,
-      body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined,
+      body: opts.body !== undefined ? JSON.stringify(opts.body) : null,
     });
   } catch {
     throw new ApiError("Cannot reach the reservation server. Is it running?");
@@ -139,7 +139,7 @@ export function slotState(av: Availability, start: string, end: string) {
 
 export function toCsv(rows: Record<string, unknown>[], filename: string) {
   if (!rows.length) return;
-  const headers = Object.keys(rows[0]);
+  const headers = Object.keys(rows[0]!);
   const esc = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
   const csv = [headers.join(","), ...rows.map((r) => headers.map((h) => esc(r[h])).join(","))].join("\n");
   const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));

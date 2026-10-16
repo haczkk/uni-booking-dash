@@ -19,7 +19,7 @@ export function PresidentView() {
   const days = useMemo(next7Days, []);
   const [resources, setResources] = useState<Resource[]>([]);
   const [resourceId, setResourceId] = useState<number | "">("");
-  const [date, setDate] = useState(days[0].iso);
+  const [date, setDate] = useState(days[0]!.iso);
   const [start, setStart] = useState("08:00");
   const [end, setEnd] = useState("09:00");
   const [av, setAv] = useState<Availability | null>(null);
@@ -42,7 +42,7 @@ export function PresidentView() {
 
   const loadAv = () => {
     if (!resourceId) return;
-    api<Availability>("/reservations/availability", { query: { resourceId, date } })
+    void api<Availability>("/reservations/availability", { query: { resourceId, date } })
       .then((d) => (setAv(d), setAvErr("")))
       .catch((e) => setAvErr(e.message));
   };
