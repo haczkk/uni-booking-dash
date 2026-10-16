@@ -99,7 +99,7 @@ export async function api<T = any>(
   try {
     res = await fetch(`${API_BASE}${path}${qs}`, {
       method: opts.method ?? (opts.body !== undefined ? "POST" : "GET"),
-      headers: opts.body !== undefined ? { "Content-Type": "application/json" } : undefined,
+      headers: opts.body !== undefined ? { "Content-Type": "application/json" } : {},
       body: opts.body !== undefined ? JSON.stringify(opts.body) : null,
     });
   } catch {
