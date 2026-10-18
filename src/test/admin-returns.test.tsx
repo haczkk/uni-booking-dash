@@ -14,6 +14,7 @@ vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 const item = { id: 42, presidentName: "Test President", section: "BSIT 2-1", resourceName: "Projector", resourceType: "EQUIPMENT", quantity: 2, reservationDate: "2026-10-18", startTime: "09:00:00", endTime: "11:00:00", pickupToken: "TCK-TEST1234" };
 
 beforeEach(() => {
+  vi.stubGlobal("ResizeObserver", class { observe() {} unobserve() {} disconnect() {} });
   vi.mocked(api).mockImplementation(async (path) => {
     if (path === "/admin/reservations/active-pickups") return [item];
     if (path === "/admin/dashboard/stats") return { activePickups: 1 };
@@ -21,7 +22,7 @@ beforeEach(() => {
   });
   vi.mocked(post).mockResolvedValue({});
 });
-afterEach(() => { cleanup(); vi.clearAllMocks(); });
+afterEach(() => { cleanup(); vi.clearAllMocks(); vi.unstubAllGlobals(); });
 
 async function openReturn() {
   render(<AdminView />);
