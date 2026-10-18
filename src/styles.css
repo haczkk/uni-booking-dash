@@ -5,8 +5,8 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --font-sans: "Inter", "Segoe UI", system-ui, sans-serif;
-  --font-display: "Fraunces", Georgia, serif;
+  --font-sans: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --font-display: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -40,6 +40,9 @@
   --color-info-soft: var(--info-soft);
   --color-danger-soft: var(--danger-soft);
   --color-ink: var(--ink);
+  --color-brand-red: var(--brand-red);
+  --color-sis-blue: var(--sis-blue);
+  --color-sis-blue-foreground: var(--sis-blue-foreground);
   --color-ink-foreground: var(--ink-foreground);
   --color-border: var(--border);
   --color-input: var(--input);
@@ -61,14 +64,17 @@
 }
 
 :root {
-  --radius: 0.75rem;
-  --background: oklch(0.984 0.003 247.858);
+  --radius: 0.3rem;
+  --brand-red: oklch(0.56 0.2 22);
+  --sis-blue: oklch(0.58 0.2 258);
+  --sis-blue-foreground: oklch(1 0 0);
+  --background: oklch(0.97 0.004 260);
   --foreground: oklch(0.208 0.042 265.755);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.208 0.042 265.755);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.208 0.042 265.755);
-  --primary: oklch(0.38 0.155 29.2);
+  --primary: oklch(0.37 0.15 29);
   --primary-deep: oklch(0.3 0.12 29.2);
   --primary-foreground: oklch(0.99 0.01 90);
   --gold: oklch(0.76 0.14 85);
@@ -103,11 +109,11 @@
   --sidebar-border: oklch(0.929 0.013 255.508);
   --sidebar-ring: oklch(0.38 0.155 29.2);
 
-  --gradient-maroon: linear-gradient(135deg, oklch(0.4 0.16 29.2), oklch(0.29 0.115 29.2));
+  --gradient-maroon: linear-gradient(oklch(0.37 0.15 29), oklch(0.37 0.15 29));
   --gradient-gold: linear-gradient(135deg, oklch(0.86 0.15 95), oklch(0.72 0.13 80));
   --gradient-hero: linear-gradient(110deg, oklch(0.25 0.1 29 / 0.95) 0%, oklch(0.3 0.12 29 / 0.82) 45%, oklch(0.3 0.12 29 / 0.25) 100%);
-  --shadow-card: 0 1px 2px oklch(0.2 0.03 265 / 0.04), 0 4px 16px -6px oklch(0.2 0.03 265 / 0.08);
-  --shadow-elegant: 0 18px 40px -18px oklch(0.38 0.155 29.2 / 0.45);
+  --shadow-card: 0 0 1px oklch(0 0 0 / 0.125), 0 1px 3px oklch(0 0 0 / 0.2);
+  --shadow-elegant: none;
 }
 
 @layer base {

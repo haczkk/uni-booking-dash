@@ -29,31 +29,43 @@ export const Route = createFileRoute("/")({
   ),
 });
 
+const TABS: Record<string, { id: string; label: string; title: string }[]> = {
+  CLASS_PRESIDENT: [{ id: "pres", label: "Reservations", title: "Reservations" }],
+  ADMIN: [{ id: "admin", label: "Operations", title: "Operations" }],
+  SUPER_ADMIN: [
+    { id: "super", label: "Home", title: "Home" },
+    { id: "admin", label: "Operations", title: "Operations" },
+    { id: "pres", label: "Reservations", title: "Reservations" },
+  ],
+};
+
 function App() {
   const { user, ready } = useSession();
   const [mode, setMode] = useState<"login" | "register" | null>(null);
+  const [tab, setTab] = useState<string | null>(null);
+  const tabs = user ? TABS[user.role] ?? [] : [];
+  const current = tabs.find((t) => t.id === tab) ?? tabs[0];
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar onSignIn={() => setMode("login")} />
-      {ready && !user && <Landing onSignIn={() => setMode("login")} onRegister={() => setMode("register")} />}
-      {user && (
-        <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
-          {user.role === "CLASS_PRESIDENT" && <PresidentView />}
-          {user.role === "ADMIN" && <AdminView />}
-          {user.role === "SUPER_ADMIN" && (
-            <Tabs defaultValue="super">
-              <TabsList className="mb-6">
-                <TabsTrigger value="super">Super admin</TabsTrigger>
-                <TabsTrigger value="admin">Operations</TabsTrigger>
-                <TabsTrigger value="pres">Reservations</TabsTrigger>
-              </TabsList>
-              <TabsContent value="super"><SuperAdminView /></TabsContent>
-              <TabsContent value="admin"><AdminView /></TabsContent>
-              <TabsContent value="pres"><PresidentView /></TabsContent>
-            </Tabs>
-          )}
-        </main>
+      {ready && !user && <Landing onRegister={() => setMode("register")} />}
+      {user && current && (
+        <>
+          <Navbar tabs={tabs} active={current.id} onTab={setTab} />
+          <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
+            <h1 className="mb-5 px-2 text-3xl font-normal text-foreground">{current.title}</h1>
+            <section className="rounded-sm bg-card shadow-card">
+              <div className="border-b px-6 py-4 text-lg font-bold uppercase text-brand-red">
+                {user.fullName} ({user.email})
+              </div>
+              <div className="p-6">
+                {current.id === "super" && <SuperAdminView />}
+                {current.id === "admin" && <AdminView />}
+                {current.id === "pres" && <PresidentView />}
+              </div>
+            </section>
+          </main>
+        </>
       )}
       <AuthDialogs mode={mode} setMode={setMode} />
     </div>

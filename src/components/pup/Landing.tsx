@@ -1,42 +1,59 @@
-import { CalendarClock, QrCode, ShieldCheck } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { api, type SessionUser } from "@/lib/api";
+import { useSession } from "@/lib/session";
 import hero from "@/assets/campus-hero.jpg";
+import { Seal } from "./shared";
 
-export function Landing({ onSignIn, onRegister }: { onSignIn: () => void; onRegister: () => void }) {
+export function Landing({ onRegister }: { onRegister: () => void }) {
+  const { signIn } = useSession();
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+
   return (
-    <>
-      <section className="relative isolate overflow-hidden">
-        <img src={hero} alt="PUP San Pedro campus at golden hour" width={1600} height={912} className="absolute inset-0 -z-10 size-full object-cover" />
-        <div className="absolute inset-0 -z-10 bg-hero-overlay" />
-        <div className="mx-auto max-w-7xl px-4 py-24 sm:px-6 md:py-36">
-          <p className="inline-flex items-center gap-2 rounded-full border border-gold/40 bg-primary-deep/40 px-3 py-1 text-xs font-medium uppercase tracking-[0.2em] text-gold backdrop-blur">
-            Office of Campus Facilities
-          </p>
-          <h1 className="mt-6 max-w-3xl font-display text-4xl font-semibold leading-[1.05] text-primary-foreground md:text-6xl">
-            Equipment &amp; Room <span className="text-gold-gradient">Reservation</span> Management
-          </h1>
-          <p className="mt-5 max-w-xl text-lg text-primary-foreground/80">
-            Book classrooms, projectors and campus equipment for your section — with live availability and verified pickup passes.
-          </p>
-          <div className="mt-8 flex flex-wrap gap-3">
-            <Button size="lg" variant="gold" onClick={onSignIn}>Sign in</Button>
-            <Button size="lg" variant="glass" onClick={onRegister}>Register as President</Button>
-          </div>
+    <div className="grid min-h-screen lg:grid-cols-[2fr_1fr]">
+      <img src={hero} alt="PUP San Pedro campus" className="hidden size-full object-cover lg:block" />
+      <div className="flex flex-col items-center justify-center bg-card px-6 py-12 text-center">
+        <Seal className="size-24" />
+        <h1 className="mt-4 text-3xl font-semibold text-foreground">
+          PUP-SIS Reservation Module <sup className="text-sm font-normal">Beta</sup>
+        </h1>
+        <p className="mt-2 text-lg">Sign in to start your session</p>
+        <form
+          className="mt-5 w-full max-w-md space-y-4"
+          onSubmit={async (e) => {
+            e.preventDefault();
+            const f = new FormData(e.currentTarget);
+            setBusy(true);
+            setErr("");
+            try {
+              const data = await api<{ user: SessionUser }>("/auth/login", { body: { email: f.get("email"), password: f.get("password") } });
+              signIn(data.user);
+              toast.success(`Welcome back, ${data.user.fullName}!`);
+            } catch (e) {
+              setErr((e as Error).message);
+            } finally {
+              setBusy(false);
+            }
+          }}
+        >
+          <Input name="email" type="email" required placeholder="PUP Email" className="h-12 text-lg" />
+          <Input name="password" type="password" required placeholder="Password" className="h-12 text-lg" />
+          {err && <p className="rounded-sm bg-danger-soft px-3 py-2 text-sm text-destructive">{err}</p>}
+          <Button type="submit" variant="sis" className="h-12 w-full rounded-none text-lg" disabled={busy}>
+            {busy ? "Please wait…" : "Sign in"}
+          </Button>
+        </form>
+        <div className="mt-6 space-y-1 text-lg">
+          <button onClick={onRegister} className="font-semibold text-brand-red hover:underline">Register as Class President</button>
+          <p><span className="text-brand-red">Reservation Tools</span> (Rooms, Projectors, Campus Equipment)</p>
         </div>
-      </section>
-      <section className="mx-auto grid max-w-7xl gap-5 px-4 py-14 sm:px-6 md:grid-cols-3">
-        {[
-          { icon: CalendarClock, t: "Live hourly timetable", d: "See every free and booked hour from 07:00 to 19:00 before you request." },
-          { icon: QrCode, t: "Official pickup voucher", d: "Approved bookings issue a single-use token and QR pass for the admin desk." },
-          { icon: ShieldCheck, t: "Accountable operations", d: "Every login, approval, pickup and return is recorded in the audit trail." },
-        ].map(({ icon: I, t, d }) => (
-          <div key={t} className="rounded-xl border bg-card p-6 shadow-card">
-            <span className="grid size-10 place-items-center rounded-lg bg-accent text-primary"><I className="size-5" /></span>
-            <h3 className="mt-4 font-semibold">{t}</h3>
-            <p className="mt-1 text-sm text-muted-foreground">{d}</p>
-          </div>
-        ))}
-      </section>
-    </>
+        <p className="mt-8 max-w-md text-base text-muted-foreground">
+          By using this service, you understood and agree to the PUP Online Services Terms of Use and Privacy Statement.
+        </p>
+      </div>
+    </div>
   );
 }
