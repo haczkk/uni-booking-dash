@@ -1,17 +1,14 @@
 import type { ReactNode } from "react";
-import { Star } from "lucide-react";
+import pupSeal from "@/assets/pup-seal.png.asset.json";
 import { cn } from "@/lib/utils";
 
 export function Seal({ className }: { className?: string }) {
   return (
-    <div
-      className={cn(
-        "grid place-items-center rounded-full bg-primary ring-2 ring-gold/70",
-        className ?? "size-10",
-      )}
-    >
-      <Star className="size-[60%] fill-gold text-gold" />
-    </div>
+    <img
+      src={pupSeal.url}
+      alt="Polytechnic University of the Philippines"
+      className={cn("shrink-0 object-contain", className ?? "size-10")}
+    />
   );
 }
 
