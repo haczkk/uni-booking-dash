@@ -43,6 +43,19 @@ export interface Availability {
   bookings: { startTime: string; endTime: string; quantity: number; professor?: string }[];
 }
 
+export interface ActivePickup {
+  id: number;
+  presidentName: string;
+  section: string;
+  resourceName: string;
+  resourceType: string;
+  quantity: number;
+  reservationDate: string;
+  startTime: string;
+  endTime: string;
+  pickupToken: string;
+}
+
 export interface NotificationItem {
   id: number;
   title: string;

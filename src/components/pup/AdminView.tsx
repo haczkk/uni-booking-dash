@@ -7,17 +7,18 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { api, post, toCsv, type Booking, type Resource, type Stats } from "@/lib/api";
+import { api, post, toCsv, type ActivePickup, type Booking, type Resource, type Stats } from "@/lib/api";
 import { usePolling, useSession } from "@/lib/session";
 import { cn } from "@/lib/utils";
 import { Field } from "./AuthDialogs";
 import { DataTable, Panel, StatusBadge, Tag, td } from "./shared";
+import { ActiveBorrowedItems } from "./ActiveBorrowedItems";
 
 const sel = "h-8 rounded-md border border-input bg-background px-2 text-sm";
 
 export function AdminView() {
   const { user } = useSession();
-  const adminEmail = user!.email;
+  const adminEmail = user?.email ?? "";
   const [stats, setStats] = useState<Stats>({});
   const [resources, setResources] = useState<Resource[]>([]);
   const [pending, setPending] = useState<Booking[]>([]);
@@ -25,11 +26,21 @@ export function AdminView() {
   const [typeF, setTypeF] = useState("");
   const [addOpen, setAddOpen] = useState(false);
   const [rejecting, setRejecting] = useState<Booking | null>(null);
+  const [activePickups, setActivePickups] = useState<ActivePickup[]>([]);
+  const [activeLoading, setActiveLoading] = useState(true);
+  const [activeError, setActiveError] = useState<string | null>(null);
 
-  const refresh = () => {
-    api<Stats>("/admin/dashboard/stats").then(setStats).catch(() => {});
-    api<Resource[]>("/reservations/resources").then(setResources).catch(() => {});
-    api<Booking[]>("/admin/reservations/pending").then(setPending).catch(() => {});
+  const refresh = async () => {
+    setActiveLoading(true);
+    await Promise.allSettled([
+      api<Stats>("/admin/dashboard/stats").then(setStats),
+      api<Resource[]>("/reservations/resources").then(setResources),
+      api<Booking[]>("/admin/reservations/pending").then(setPending),
+      api<ActivePickup[]>("/admin/reservations/active-pickups")
+        .then((items) => { setActivePickups(items); setActiveError(null); })
+        .catch((e) => setActiveError(e instanceof Error ? e.message : "Could not load active borrowed items."))
+        .finally(() => setActiveLoading(false)),
+    ]);
   };
   usePolling(refresh, 5000, []);
 
@@ -105,6 +116,8 @@ export function AdminView() {
           </form>
         </Panel>
       </div>
+
+      <ActiveBorrowedItems items={activePickups} loading={activeLoading} error={activeError} adminEmail={adminEmail} onRefresh={refresh} />
 
       <Panel
         title="Pending requests"
@@ -198,8 +211,9 @@ export function AdminView() {
             className="space-y-4"
             onSubmit={async (e) => {
               e.preventDefault();
+              if (!rejecting) return;
               const reason = String(new FormData(e.currentTarget).get("reason"));
-              if (await act(() => post(`/admin/reservations/${rejecting!.id}/reject`, { adminEmail, reason }), "Request rejected.")) setRejecting(null);
+              if (await act(() => post(`/admin/reservations/${rejecting.id}/reject`, { adminEmail, reason }), "Request rejected.")) setRejecting(null);
             }}
           >
             <Textarea name="reason" required rows={3} placeholder="Room already reserved for a department event." />
