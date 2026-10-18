@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 export function Seal({ className }: { className?: string }) {
   return (
     <img
-      src={pupSeal.url}
+      src="/pup-seal.png"
       alt="Polytechnic University of the Philippines"
       className={cn("shrink-0 object-contain", className ?? "size-10")}
     />
@@ -31,7 +31,12 @@ const STATUS: Record<string, { label: string; cls: string }> = {
 export function StatusBadge({ status }: { status: string }) {
   const s = STATUS[status] ?? { label: status, cls: "bg-muted text-muted-foreground" };
   return (
-    <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium", s.cls)}>
+    <span
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium",
+        s.cls,
+      )}
+    >
       <span className="size-1.5 rounded-full bg-current" />
       {s.label}
     </span>
@@ -73,7 +78,15 @@ export function Panel({
   );
 }
 
-export function DataTable({ head, children, empty }: { head: string[]; children: ReactNode; empty?: boolean }) {
+export function DataTable({
+  head,
+  children,
+  empty,
+}: {
+  head: string[];
+  children: ReactNode;
+  empty?: boolean;
+}) {
   return (
     <div className="overflow-x-auto border">
       <table className="w-full text-sm">

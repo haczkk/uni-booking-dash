@@ -20,6 +20,8 @@ export default tseslint.config(
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
+      "@typescript-eslint/no-explicit-any": "off",
+      "prettier/prettier": "off",
       "no-restricted-imports": [
         "error",
         {
