@@ -130,7 +130,7 @@ export function PresidentView() {
         </div>
         <div className="flex flex-wrap gap-6 text-sm">
           <div>
-            <p className="text-muted-foreground">PUP email</p>
+            <p className="text-muted-foreground">PUP Webmail</p>
             <p className="font-medium">{user?.email}</p>
           </div>
           <div>

@@ -131,7 +131,7 @@ export function AdminView() {
       </div>
 
       <Panel
-        title="🎟️ Verify Pickup Token & Release Item"
+        title="Verify Pickup Token & Release Item"
         description="Redeem the student's one-time pickup code to release room keys or campus equipment."
       >
         <form
@@ -286,7 +286,15 @@ export function AdminView() {
                 <span className="text-muted-foreground"> / {r.totalQuantity}</span>
               </td>
               <td className={td}>
-                <StatusBadge status={r.status} />
+                {r.status === "UNDER_MAINTENANCE" ? (
+                  <StatusBadge status="UNDER_MAINTENANCE" />
+                ) : r.availableQuantity === 0 ? (
+                  <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-semibold text-blue-800">
+                    IN USE
+                  </span>
+                ) : (
+                  <StatusBadge status="AVAILABLE" />
+                )}
               </td>
               <td className={cn(td, "text-right")}>
                 <Button
