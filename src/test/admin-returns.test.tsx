@@ -1,4 +1,5 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { useEffect } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AdminView } from "@/components/pup/AdminView";
 import { api, post } from "@/lib/api";
@@ -6,7 +7,6 @@ import { api, post } from "@/lib/api";
 vi.mock("@/lib/api", async (importOriginal) => ({ ...await importOriginal<typeof import("@/lib/api")>(), api: vi.fn(), post: vi.fn() }));
 vi.mock("@/lib/session", () => ({ useSession: () => ({ user: { email: "admin@example.test" } }), usePolling: (fn: () => void) => {
   // Trigger only the initial poll in tests.
-  const { useEffect } = require("react");
   useEffect(() => { fn(); }, []);
 } }));
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
