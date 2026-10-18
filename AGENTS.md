@@ -11,3 +11,4 @@
 
 - All data comes from the external Spring Boot REST API via src/lib/api.ts (base URL from VITE_API_BASE, default http://localhost:8080/api); no Lovable Cloud — the user owns the backend.
 - Session user is kept in sessionStorage key `pup_user` via src/lib/session.tsx; live data polls every 5s with usePolling.
+- AdminView owns the active-pickup read and shared refresh; ActiveBorrowedItems handles row return confirmation through the existing API client so all affected lists refresh together.
