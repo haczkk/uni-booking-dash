@@ -1,15 +1,16 @@
 import type { ReactNode } from "react";
+import { Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function Seal({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        "grid place-items-center rounded-full bg-gold-gradient text-primary-deep font-display font-bold ring-2 ring-gold/40",
-        className ?? "size-10 text-sm",
+        "grid place-items-center rounded-full bg-primary ring-2 ring-gold/70",
+        className ?? "size-10",
       )}
     >
-      PUP
+      <Star className="size-[60%] fill-gold text-gold" />
     </div>
   );
 }
@@ -62,10 +63,10 @@ export function Panel({
   className?: string;
 }) {
   return (
-    <section className={cn("rounded-xl border bg-card shadow-card", className)}>
+    <section className={cn("rounded-sm bg-card shadow-card", className)}>
       <header className="flex flex-wrap items-center justify-between gap-3 border-b px-5 py-4">
         <div>
-          <h3 className="font-semibold text-foreground">{title}</h3>
+          <h3 className="text-lg font-bold text-foreground">{title}</h3>
           {description && <p className="mt-0.5 text-sm text-muted-foreground">{description}</p>}
         </div>
         {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
@@ -77,18 +78,18 @@ export function Panel({
 
 export function DataTable({ head, children, empty }: { head: string[]; children: ReactNode; empty?: boolean }) {
   return (
-    <div className="overflow-x-auto rounded-lg border">
+    <div className="overflow-x-auto border">
       <table className="w-full text-sm">
-        <thead className="bg-muted/60 text-left text-xs uppercase tracking-wide text-muted-foreground">
+        <thead className="border-b-2 text-left text-sm text-foreground">
           <tr>
             {head.map((h) => (
-              <th key={h} className="whitespace-nowrap px-4 py-2.5 font-medium">
+              <th key={h} className="whitespace-nowrap border-x px-4 py-3 font-bold">
                 {h}
               </th>
             ))}
           </tr>
         </thead>
-        <tbody className="divide-y">
+        <tbody className="divide-y [&_td]:border-x">
           {empty ? (
             <tr>
               <td colSpan={head.length} className="px-4 py-10 text-center text-muted-foreground">
@@ -105,3 +106,7 @@ export function DataTable({ head, children, empty }: { head: string[]; children:
 }
 
 export const td = "px-4 py-3 align-middle";
+
+export function MaroonBar({ children }: { children: ReactNode }) {
+  return <div className="bg-primary px-6 py-4 text-lg text-primary-foreground">{children}</div>;
+}

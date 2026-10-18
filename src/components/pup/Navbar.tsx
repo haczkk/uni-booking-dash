@@ -1,55 +1,65 @@
 import { useState } from "react";
 import { toast } from "sonner";
-import { Bell, LogOut, Settings } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Bell, ChevronDown, LogOut, Settings, User } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { api, post, type NotificationItem } from "@/lib/api";
 import { usePolling, useSession } from "@/lib/session";
 import { cn } from "@/lib/utils";
 import { ChangePasswordDialog } from "./AuthDialogs";
 import { Seal } from "./shared";
 
-const ROLE_LABEL = { CLASS_PRESIDENT: "Class President", ADMIN: "Admin Staff", SUPER_ADMIN: "Super Admin" };
+const ROLE_LABEL: Record<string, string> = { CLASS_PRESIDENT: "Class President", ADMIN: "Admin Staff", SUPER_ADMIN: "Super Admin" };
 
-export function Navbar({ onSignIn }: { onSignIn: () => void }) {
+export interface NavTab { id: string; label: string }
+
+export function Navbar({ tabs, active, onTab }: { tabs: NavTab[]; active: string; onTab: (id: string) => void }) {
   const { user, signOut } = useSession();
   const [pwOpen, setPwOpen] = useState(false);
+  if (!user) return null;
 
   return (
-    <header className="sticky top-0 z-40 bg-maroon-gradient text-primary-foreground shadow-elegant">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
-        <div className="flex min-w-0 items-center gap-3">
-          <Seal />
-          <div className="min-w-0 leading-tight">
-            <p className="truncate font-display text-[15px] font-semibold">Polytechnic University of the Philippines</p>
-            <p className="truncate text-xs text-primary-foreground/70">San Pedro Campus · Reservation System</p>
+    <header className="sticky top-0 z-40 border-b bg-card">
+      <div className="mx-auto flex h-[70px] max-w-7xl items-stretch justify-between gap-4 px-4 sm:px-6">
+        <div className="flex min-w-0 items-stretch gap-2">
+          <div className="flex items-center gap-2 pr-3">
+            <Seal className="size-9" />
+            <span className="text-2xl text-primary">PUPSIS</span>
           </div>
+          <nav className="flex items-stretch overflow-x-auto">
+            {tabs.map((t) => (
+              <button
+                key={t.id}
+                onClick={() => onTab(t.id)}
+                className={cn(
+                  "whitespace-nowrap border-b-2 px-4 text-lg text-muted-foreground transition-colors hover:text-foreground",
+                  active === t.id ? "border-primary text-foreground/80" : "border-transparent",
+                )}
+              >
+                {t.label}
+              </button>
+            ))}
+          </nav>
         </div>
-        {user ? (
-          <div className="flex items-center gap-1 sm:gap-2">
-            <NotificationBell userId={user.id} />
-            <div className="hidden items-center gap-2 rounded-full bg-primary-foreground/10 py-1 pl-1 pr-3 md:flex">
-              <span className="grid size-7 place-items-center rounded-full bg-gold-gradient text-xs font-bold text-gold-foreground">
-                {user.fullName.split(" ").map((p) => p[0]).slice(0, 2).join("")}
-              </span>
-              <div className="leading-tight">
-                <p className="text-xs font-semibold">{user.fullName}</p>
-                <p className="text-[10px] uppercase tracking-wider text-gold">{ROLE_LABEL[user.role] ?? user.role}</p>
-              </div>
-            </div>
-            <Button size="icon" variant="ghost" className="hover:bg-primary-foreground/10 hover:text-primary-foreground" onClick={() => setPwOpen(true)} aria-label="Settings">
-              <Settings className="size-4" />
-            </Button>
-            <Button size="sm" variant="glass" onClick={() => (signOut(), toast("Signed out."))}>
-              <LogOut className="size-4" /> <span className="hidden sm:inline">Sign out</span>
-            </Button>
-            <ChangePasswordDialog open={pwOpen} onOpenChange={setPwOpen} />
-          </div>
-        ) : (
-          <Button size="sm" variant="gold" onClick={onSignIn}>
-            Sign in
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          <NotificationBell userId={user.id} />
+          <DropdownMenu>
+            <DropdownMenuTrigger className="flex items-center gap-1 text-sis-blue" aria-label="Account">
+              <User className="size-5 fill-current" />
+              <ChevronDown className="size-4 rounded-sm border border-muted-foreground text-muted-foreground" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel>
+                <p className="font-semibold">{user.fullName}</p>
+                <p className="text-xs font-normal text-muted-foreground">{ROLE_LABEL[user.role] ?? user.role}</p>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onSelect={() => setPwOpen(true)}><Settings className="size-4" /> Change password</DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => (signOut(), toast("Signed out."))}><LogOut className="size-4" /> Sign out</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <ChangePasswordDialog open={pwOpen} onOpenChange={setPwOpen} />
+        </div>
       </div>
     </header>
   );
@@ -76,10 +86,10 @@ function NotificationBell({ userId }: { userId: number }) {
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <button className="relative grid size-9 place-items-center rounded-md hover:bg-primary-foreground/10" aria-label="Notifications">
-          <Bell className="size-4" />
+        <button className="relative grid size-9 place-items-center rounded-md text-muted-foreground hover:bg-muted" aria-label="Notifications">
+          <Bell className="size-5" />
           {unread > 0 && (
-            <span className="absolute -right-0.5 -top-0.5 grid min-w-4 place-items-center rounded-full bg-gold px-1 text-[10px] font-bold text-gold-foreground">
+            <span className="absolute -right-0.5 -top-0.5 grid min-w-4 place-items-center rounded-full bg-brand-red px-1 text-[10px] font-bold text-primary-foreground">
               {unread > 9 ? "9+" : unread}
             </span>
           )}
@@ -87,9 +97,9 @@ function NotificationBell({ userId }: { userId: number }) {
       </PopoverTrigger>
       <PopoverContent align="end" className="w-80 p-0">
         <div className="flex items-center justify-between border-b px-4 py-3">
-          <p className="text-sm font-semibold">Notifications</p>
+          <p className="font-bold">Inbox</p>
           <button
-            className="text-xs font-medium text-primary hover:underline"
+            className="text-xs font-medium text-brand-red hover:underline"
             onClick={async () => {
               await post("/notifications/read-all", { userId }).catch(() => {});
               load();
@@ -109,7 +119,7 @@ function NotificationBell({ userId }: { userId: number }) {
               }}
               className={cn(
                 "block w-full border-b border-l-2 px-4 py-3 text-left last:border-b-0 hover:bg-muted/60",
-                n.isRead ? "border-l-transparent" : "border-l-primary bg-accent/50",
+                n.isRead ? "border-l-transparent" : "border-l-brand-red bg-accent/50",
               )}
             >
               <div className="flex justify-between gap-2">
