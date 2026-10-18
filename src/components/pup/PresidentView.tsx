@@ -5,14 +5,24 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { api, next7Days, post, SLOTS, slotState, type Availability, type Booking, type Resource } from "@/lib/api";
+import {
+  api,
+  next7Days,
+  post,
+  SLOTS,
+  slotState,
+  type Availability,
+  type Booking,
+  type Resource,
+} from "@/lib/api";
 import { usePolling, useSession } from "@/lib/session";
 import { cn } from "@/lib/utils";
 import { DataTable, Panel, StatusBadge, td } from "./shared";
 import { VoucherDialog } from "./Voucher";
 
 const HOURS = Array.from({ length: 13 }, (_, i) => `${String(7 + i).padStart(2, "0")}:00`);
-const sel = "h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring";
+const sel =
+  "h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring";
 
 export function PresidentView() {
   const { user } = useSession();
@@ -56,7 +66,11 @@ export function PresidentView() {
 
   const filtered = mine.filter((r) => {
     const s = q.toLowerCase();
-    const hit = !s || [r.resourceName, r.professorName, r.purpose, r.reservationDate].some((v) => v?.toLowerCase().includes(s));
+    const hit =
+      !s ||
+      [r.resourceName, r.professorName, r.purpose, r.reservationDate].some((v) =>
+        v?.toLowerCase().includes(s),
+      );
     return hit && (!statusF || r.status === statusF);
   });
 
@@ -81,7 +95,8 @@ export function PresidentView() {
           requestedQuantity: Number(f.get("qty")),
         },
       });
-      if (d.status === "AUTO_APPROVED") toast.success("Reservation auto-approved!", { description: d.message });
+      if (d.status === "AUTO_APPROVED")
+        toast.success("Reservation auto-approved!", { description: d.message });
       else toast.warning("Sent to admin for review", { description: d.message });
       (e.target as HTMLFormElement).reset();
       loadAv();
@@ -108,24 +123,41 @@ export function PresidentView() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-gold/40 bg-gold-soft px-5 py-4">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-widest text-gold-foreground/70">Authorized class president</p>
+          <p className="text-xs font-semibold uppercase tracking-widest text-gold-foreground/70">
+            Authorized class president
+          </p>
           <p className="mt-0.5 font-display text-xl font-semibold">{user?.fullName}</p>
         </div>
         <div className="flex flex-wrap gap-6 text-sm">
-          <div><p className="text-muted-foreground">PUP email</p><p className="font-medium">{user?.email}</p></div>
-          <div><p className="text-muted-foreground">Section</p><p className="font-medium">{user?.section ?? "—"}</p></div>
+          <div>
+            <p className="text-muted-foreground">PUP email</p>
+            <p className="font-medium">{user?.email}</p>
+          </div>
+          <div>
+            <p className="text-muted-foreground">Section</p>
+            <p className="font-medium">{user?.section ?? "—"}</p>
+          </div>
         </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[380px_1fr]">
-        <Panel title="Reserve a resource" description="Requests without conflicts are approved instantly.">
+        <Panel
+          title="Reserve a resource"
+          description="Requests without conflicts are approved instantly."
+        >
           <form onSubmit={submit} className="space-y-4">
             <div className="space-y-1.5">
               <Label>Resource</Label>
-              <select className={sel} value={resourceId} onChange={(e) => setResourceId(Number(e.target.value))} required>
+              <select
+                className={sel}
+                value={resourceId}
+                onChange={(e) => setResourceId(Number(e.target.value))}
+                required
+              >
                 {resources.map((r) => (
                   <option key={r.id} value={r.id} disabled={r.status === "UNDER_MAINTENANCE"}>
-                    {r.name} · {r.type} ({r.availableQuantity}/{r.totalQuantity}){r.status === "UNDER_MAINTENANCE" ? " — maintenance" : ""}
+                    {r.name} · {r.type} ({r.availableQuantity}/{r.totalQuantity})
+                    {r.status === "UNDER_MAINTENANCE" ? " — maintenance" : ""}
                   </option>
                 ))}
               </select>
@@ -140,7 +172,9 @@ export function PresidentView() {
                     onClick={() => setDate(d.iso)}
                     className={cn(
                       "rounded-lg border py-1.5 text-center transition",
-                      date === d.iso ? "border-primary bg-primary text-primary-foreground shadow-elegant" : "hover:border-primary/40 hover:bg-accent",
+                      date === d.iso
+                        ? "border-primary bg-primary text-primary-foreground shadow-elegant"
+                        : "hover:border-primary/40 hover:bg-accent",
                     )}
                   >
                     <span className="block text-[10px] uppercase opacity-70">{d.day}</span>
@@ -153,22 +187,51 @@ export function PresidentView() {
               <div className="space-y-1.5">
                 <Label>Start</Label>
                 <select className={sel} value={start} onChange={(e) => setStart(e.target.value)}>
-                  {HOURS.slice(0, -1).map((h) => <option key={h}>{h}</option>)}
+                  {HOURS.slice(0, -1).map((h) => (
+                    <option key={h}>{h}</option>
+                  ))}
                 </select>
               </div>
               <div className="space-y-1.5">
                 <Label>End</Label>
                 <select className={sel} value={end} onChange={(e) => setEnd(e.target.value)}>
-                  {HOURS.slice(1).map((h) => <option key={h}>{h}</option>)}
+                  {HOURS.slice(1).map((h) => (
+                    <option key={h}>{h}</option>
+                  ))}
                 </select>
               </div>
             </div>
             <div className="grid grid-cols-[1fr_90px] gap-3">
-              <div className="space-y-1.5"><Label htmlFor="professor">Professor</Label><Input id="professor" name="professor" required placeholder="Prof. Santos" /></div>
-              <div className="space-y-1.5"><Label htmlFor="qty">Qty</Label><Input id="qty" name="qty" type="number" min={1} defaultValue={1} required /></div>
+              <div className="space-y-1.5">
+                <Label htmlFor="professor">Professor</Label>
+                <Input
+                  id="professor"
+                  name="professor"
+                  required
+                  placeholder="Prof. Juan de la Cruz"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="qty">Qty</Label>
+                <Input id="qty" name="qty" type="number" min={1} defaultValue={1} required />
+              </div>
             </div>
-            <div className="space-y-1.5"><Label htmlFor="purpose">Purpose</Label><Textarea id="purpose" name="purpose" rows={2} required placeholder="Thesis defense presentation" /></div>
-            <Button type="submit" variant="maroon" className="w-full" disabled={busy || !resourceId}>
+            <div className="space-y-1.5">
+              <Label htmlFor="purpose">Purpose</Label>
+              <Textarea
+                id="purpose"
+                name="purpose"
+                rows={2}
+                required
+                placeholder="e.g., Thesis defense presentation"
+              />
+            </div>
+            <Button
+              type="submit"
+              variant="maroon"
+              className="w-full"
+              disabled={busy || !resourceId}
+            >
               {busy ? "Submitting…" : "Submit reservation"}
             </Button>
           </form>
@@ -179,21 +242,36 @@ export function PresidentView() {
           description={`${resources.find((r) => r.id === resourceId)?.name ?? "Select a resource"} · ${date}`}
           actions={
             <div className="flex gap-3 text-xs text-muted-foreground">
-              <span className="flex items-center gap-1"><span className="size-2 rounded-full bg-success" />Free</span>
-              <span className="flex items-center gap-1"><span className="size-2 rounded-full bg-destructive" />Booked</span>
+              <span className="flex items-center gap-1">
+                <span className="size-2 rounded-full bg-success" />
+                Free
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="size-2 rounded-full bg-destructive" />
+                Booked
+              </span>
             </div>
           }
         >
-          {avErr && <p className="rounded-md bg-danger-soft px-3 py-2 text-sm text-destructive">{avErr}</p>}
-          {!av && !avErr && <p className="py-10 text-center text-sm text-muted-foreground">Loading schedule…</p>}
+          {avErr && (
+            <p className="rounded-md bg-danger-soft px-3 py-2 text-sm text-destructive">{avErr}</p>
+          )}
+          {!av && !avErr && (
+            <p className="py-10 text-center text-sm text-muted-foreground">Loading schedule…</p>
+          )}
           {av && (
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-4">
               {SLOTS.map((s) => {
                 const st = slotState(av, s.start, s.end);
                 const active = start <= s.start && end >= s.end;
                 return st.booked ? (
-                  <div key={s.start} className="rounded-lg border border-destructive/20 bg-danger-soft p-3 text-destructive">
-                    <p className="text-sm font-semibold">{s.start}–{s.end}</p>
+                  <div
+                    key={s.start}
+                    className="rounded-lg border border-destructive/20 bg-danger-soft p-3 text-destructive"
+                  >
+                    <p className="text-sm font-semibold">
+                      {s.start}–{s.end}
+                    </p>
                     <p className="mt-1 truncate text-xs">{st.conflict?.professor ?? "Reserved"}</p>
                   </div>
                 ) : (
@@ -206,7 +284,9 @@ export function PresidentView() {
                       active && "ring-2 ring-success",
                     )}
                   >
-                    <p className="text-sm font-semibold">{s.start}–{s.end}</p>
+                    <p className="text-sm font-semibold">
+                      {s.start}–{s.end}
+                    </p>
                     <p className="mt-1 text-xs">{st.isRoom ? "Available" : `${st.left} left`}</p>
                   </button>
                 );
@@ -220,27 +300,70 @@ export function PresidentView() {
         title="My bookings"
         actions={
           <>
-            <Input placeholder="Search…" value={q} onChange={(e) => setQ(e.target.value)} className="h-8 w-44" />
-            <select className={cn(sel, "h-8 w-40")} value={statusF} onChange={(e) => setStatusF(e.target.value)}>
+            <Input
+              placeholder="Search…"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              className="h-8 w-44"
+            />
+            <select
+              className={cn(sel, "h-8 w-40")}
+              value={statusF}
+              onChange={(e) => setStatusF(e.target.value)}
+            >
               <option value="">All statuses</option>
-              {["AUTO_APPROVED", "APPROVED", "PENDING", "PICKED_UP", "RETURNED", "CANCELLED", "REJECTED"].map((s) => <option key={s}>{s}</option>)}
+              {[
+                "AUTO_APPROVED",
+                "APPROVED",
+                "PENDING",
+                "PICKED_UP",
+                "RETURNED",
+                "CANCELLED",
+                "REJECTED",
+              ].map((s) => (
+                <option key={s}>{s}</option>
+              ))}
             </select>
           </>
         }
       >
-        <DataTable head={["Resource", "Schedule", "Professor", "Status", ""]} empty={filtered.length === 0}>
+        <DataTable
+          head={["Resource", "Schedule", "Professor", "Status", ""]}
+          empty={filtered.length === 0}
+        >
           {filtered.map((r) => (
             <tr key={r.id} className="hover:bg-muted/40">
-              <td className={td}><p className="font-medium">{r.resourceName}</p><p className="text-xs text-muted-foreground">{r.purpose}</p></td>
-              <td className={td}>{r.reservationDate}<p className="text-xs text-muted-foreground">{r.startTime?.slice(0, 5)}–{r.endTime?.slice(0, 5)}</p></td>
+              <td className={td}>
+                <p className="font-medium">{r.resourceName}</p>
+                <p className="text-xs text-muted-foreground">{r.purpose}</p>
+              </td>
+              <td className={td}>
+                {r.reservationDate}
+                <p className="text-xs text-muted-foreground">
+                  {r.startTime?.slice(0, 5)}–{r.endTime?.slice(0, 5)}
+                </p>
+              </td>
               <td className={td}>{r.professorName}</td>
-              <td className={td}><StatusBadge status={r.status} /></td>
+              <td className={td}>
+                <StatusBadge status={r.status} />
+              </td>
               <td className={cn(td, "text-right whitespace-nowrap")}>
                 {(r.status === "AUTO_APPROVED" || r.status === "APPROVED") && r.pickupToken && (
-                  <Button size="sm" variant="secondary" onClick={() => setVoucher(r)}><Ticket className="size-3.5" />View pass</Button>
+                  <Button size="sm" variant="secondary" onClick={() => setVoucher(r)}>
+                    <Ticket className="size-3.5" />
+                    View pass
+                  </Button>
                 )}
                 {["AUTO_APPROVED", "APPROVED", "PENDING"].includes(r.status) && (
-                  <Button size="sm" variant="ghost" className="ml-1 text-destructive" onClick={() => cancel(r.id)}><X className="size-3.5" />Cancel</Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="ml-1 text-destructive"
+                    onClick={() => cancel(r.id)}
+                  >
+                    <X className="size-3.5" />
+                    Cancel
+                  </Button>
                 )}
               </td>
             </tr>
@@ -251,4 +374,3 @@ export function PresidentView() {
     </div>
   );
 }
-
