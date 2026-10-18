@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { api, type SessionUser } from "@/lib/api";
 import { useSession } from "@/lib/session";
-import hero from "@/assets/campus-hero.jpg";
+import heroAsset from "@/assets/pup-san-pedro-campus.jpg.asset.json";
 import { Seal } from "./shared";
 
 export function Landing({ onRegister }: { onRegister: () => void }) {
@@ -14,7 +14,7 @@ export function Landing({ onRegister }: { onRegister: () => void }) {
 
   return (
     <div className="grid min-h-screen lg:grid-cols-[2fr_1fr]">
-      <img src={hero} alt="PUP San Pedro campus" className="hidden size-full object-cover lg:block" />
+      <img src={heroAsset.url} alt="PUP San Pedro campus building" className="hidden size-full object-cover lg:block" />
       <div className="flex flex-col items-center justify-center bg-card px-6 py-12 text-center">
         <Seal className="size-24" />
         <h1 className="mt-4 text-3xl font-semibold text-foreground">
