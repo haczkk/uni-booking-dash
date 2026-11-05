@@ -263,11 +263,11 @@ export function PresidentView() {
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-4">
               {SLOTS.map((s) => {
                 const st = slotState(av, s.start, s.end);
-                const active = start <= s.start && end >= s.end;
+                const isSelectedRange = start <= s.start && end > s.start;
                 return st.booked ? (
                   <div
                     key={s.start}
-                    className="rounded-lg border border-destructive/20 bg-danger-soft p-3 text-destructive"
+                    className="rounded-lg border border-destructive/20 bg-danger-soft p-3 text-destructive select-none"
                   >
                     <p className="text-sm font-semibold">
                       {s.start}–{s.end}
@@ -275,20 +275,20 @@ export function PresidentView() {
                     <p className="mt-1 truncate text-xs">{st.conflict?.professor ?? "Reserved"}</p>
                   </div>
                 ) : (
-                  <button
+                  <div
                     key={s.start}
-                    type="button"
-                    onClick={() => (setStart(s.start), setEnd(s.end))}
                     className={cn(
-                      "rounded-lg border border-success/20 bg-success-soft p-3 text-left text-success transition hover:-translate-y-0.5 hover:shadow-card",
-                      active && "ring-2 ring-success",
+                      "rounded-lg border border-success/20 bg-success-soft p-3 text-left text-success select-none",
+                      isSelectedRange && "ring-2 ring-success ring-offset-1 font-semibold",
                     )}
                   >
                     <p className="text-sm font-semibold">
                       {s.start}–{s.end}
                     </p>
-                    <p className="mt-1 text-xs">{st.isRoom ? "Available" : `${st.left} left`}</p>
-                  </button>
+                    <p className="mt-1 text-xs font-normal">
+                      {st.isRoom ? "Available" : `${st.left} left`}
+                    </p>
+                  </div>
                 );
               })}
             </div>

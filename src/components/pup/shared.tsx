@@ -83,18 +83,20 @@ export function DataTable({
   head,
   children,
   empty,
+  maxHeight = "max-h-[360px]",
 }: {
   head: string[];
   children: ReactNode;
   empty?: boolean;
+  maxHeight?: string;
 }) {
   return (
-    <div className="overflow-x-auto border">
+    <div className={cn("overflow-auto border shadow-inner", maxHeight)}>
       <table className="w-full text-sm">
-        <thead className="border-b-2 text-left text-sm text-foreground">
-          <tr>
+        <thead className="sticky top-0 z-10 border-b-2 text-left text-sm text-foreground shadow-sm">
+          <tr className="bg-card">
             {head.map((h) => (
-              <th key={h} className="whitespace-nowrap border-x px-4 py-3 font-bold">
+              <th key={h} className="whitespace-nowrap border-x bg-card px-4 py-3 font-bold">
                 {h}
               </th>
             ))}

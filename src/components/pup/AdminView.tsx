@@ -43,6 +43,11 @@ export function AdminView() {
   const [activeLoading, setActiveLoading] = useState(true);
   const [activeError, setActiveError] = useState<string | null>(null);
 
+  // Granular Maintenance Manager Modal State
+  const [managingMaint, setManagingMaint] = useState<Resource | null>(null);
+  const [damageQty, setDamageQty] = useState(1);
+  const [repairQty, setRepairQty] = useState(1);
+
   const isFirstMount = useRef(true);
 
   const refresh = async (showLoadingState = false) => {
@@ -284,9 +289,8 @@ export function AdminView() {
               <td className={td}>
                 <span className="font-medium">{r.availableQuantity}</span>
                 <span className="text-muted-foreground"> / {r.totalQuantity}</span>
-                {/* Show damaged count if any units are in maintenance */}
                 {(r.maintenanceQuantity ?? 0) > 0 && (
-                  <p className="text-[11px] font-semibold text-amber-600 mt-0.5">
+                  <p className="text-[11px] font-semibold text-amber-600">
                     {r.maintenanceQuantity} in maintenance
                   </p>
                 )}
@@ -305,46 +309,141 @@ export function AdminView() {
                 />
               </td>
               <td className={cn(td, "text-right")}>
-                {/* If units are broken, admin can repair 1 unit at a time! */}
-                {(r.maintenanceQuantity ?? 0) > 0 ? (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="text-emerald-700 border-emerald-300 hover:bg-emerald-50"
-                    onClick={() =>
-                      act(
-                        () =>
-                          post(
-                            `/admin/resources/${r.id}/repair?units=1&adminEmail=${encodeURIComponent(adminEmail)}`,
-                          ),
-                        "1 unit repaired and returned to available stock.",
-                      )
-                    }
-                  >
-                    Mark 1 fixed ({r.maintenanceQuantity ?? 0} left)
-                  </Button>
-                ) : (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() =>
-                      act(
-                        () =>
-                          post(
-                            `/admin/resources/${r.id}/toggle-maintenance?adminEmail=${encodeURIComponent(adminEmail)}`,
-                          ),
-                        "1 unit sent to maintenance.",
-                      )
-                    }
-                  >
-                    Set maintenance
-                  </Button>
-                )}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className={cn(
+                    (r.maintenanceQuantity ?? 0) > 0 &&
+                      "border-amber-400 text-amber-800 hover:bg-amber-50",
+                  )}
+                  onClick={() => {
+                    setManagingMaint(r);
+                    setDamageQty(1);
+                    setRepairQty(1);
+                  }}
+                >
+                  {(r.maintenanceQuantity ?? 0) > 0
+                    ? `🛠️ Manage (${r.maintenanceQuantity} broken)`
+                    : "Set maintenance"}
+                </Button>
               </td>
             </tr>
           ))}
         </DataTable>
       </Panel>
+
+      {/* Granular Maintenance Modal (Sets any quantity to broken or repaired) */}
+      <Dialog
+        open={managingMaint !== null}
+        onOpenChange={(open) => !open && setManagingMaint(null)}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Manage Maintenance</DialogTitle>
+            <DialogDescription>
+              {managingMaint?.name} ({managingMaint?.type})
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid grid-cols-3 gap-2 rounded-lg border bg-muted/30 p-3 text-center text-xs">
+            <div>
+              <span className="text-muted-foreground block">Available</span>
+              <strong className="text-sm text-emerald-700">
+                {managingMaint?.availableQuantity}
+              </strong>
+            </div>
+            <div>
+              <span className="text-muted-foreground block">In Maintenance</span>
+              <strong className="text-sm text-amber-700">
+                {managingMaint?.maintenanceQuantity ?? 0}
+              </strong>
+            </div>
+            <div>
+              <span className="text-muted-foreground block">Total Stock</span>
+              <strong className="text-sm">{managingMaint?.totalQuantity}</strong>
+            </div>
+          </div>
+
+          <div className="space-y-4 pt-2">
+            {/* Action 1: Place working units into maintenance */}
+            <div className="rounded-lg border p-3 space-y-2">
+              <Label className="text-xs font-semibold text-destructive flex items-center gap-1">
+                <Wrench className="size-3.5" /> Report Damaged / Send to Maintenance
+              </Label>
+              <div className="flex gap-2 items-center">
+                <Input
+                  type="number"
+                  min={1}
+                  max={managingMaint?.availableQuantity || 1}
+                  value={damageQty}
+                  onChange={(e) => setDamageQty(Math.max(1, Number(e.target.value)))}
+                  className="h-8 w-24 text-center font-bold"
+                  disabled={(managingMaint?.availableQuantity ?? 0) <= 0}
+                />
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  className="w-full text-xs"
+                  disabled={(managingMaint?.availableQuantity ?? 0) <= 0}
+                  onClick={async () => {
+                    const ok = await act(
+                      () =>
+                        post(
+                          `/admin/resources/${managingMaint!.id}/set-maintenance?units=${damageQty}&adminEmail=${encodeURIComponent(adminEmail)}`,
+                        ),
+                      `${damageQty} unit(s) moved to maintenance.`,
+                    );
+                    if (ok) setManagingMaint(null);
+                  }}
+                >
+                  Move {damageQty} to Maintenance
+                </Button>
+              </div>
+              {(managingMaint?.availableQuantity ?? 0) <= 0 && (
+                <p className="text-[11px] text-muted-foreground">
+                  All units are currently in use or already broken.
+                </p>
+              )}
+            </div>
+
+            {/* Action 2: Restore repaired units back into storage */}
+            {(managingMaint?.maintenanceQuantity ?? 0) > 0 && (
+              <div className="rounded-lg border border-emerald-200 bg-emerald-50/40 p-3 space-y-2">
+                <Label className="text-xs font-semibold text-emerald-800 flex items-center gap-1">
+                  ✅ Mark Repaired / Return to Available Stock
+                </Label>
+                <div className="flex gap-2 items-center">
+                  <Input
+                    type="number"
+                    min={1}
+                    max={managingMaint?.maintenanceQuantity || 1}
+                    value={repairQty}
+                    onChange={(e) => setRepairQty(Math.max(1, Number(e.target.value)))}
+                    className="h-8 w-24 text-center font-bold"
+                  />
+                  <Button
+                    size="sm"
+                    variant="success"
+                    className="w-full text-xs"
+                    onClick={async () => {
+                      const ok = await act(
+                        () =>
+                          post(
+                            `/admin/resources/${managingMaint!.id}/repair?units=${repairQty}&adminEmail=${encodeURIComponent(adminEmail)}`,
+                          ),
+                        `${repairQty} unit(s) repaired and returned to available stock.`,
+                      );
+                      if (ok) setManagingMaint(null);
+                    }}
+                  >
+                    Restore {repairQty} to Available
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
         <DialogContent className="sm:max-w-md">
