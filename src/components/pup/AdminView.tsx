@@ -284,31 +284,62 @@ export function AdminView() {
               <td className={td}>
                 <span className="font-medium">{r.availableQuantity}</span>
                 <span className="text-muted-foreground"> / {r.totalQuantity}</span>
-              </td>
-              <td className={td}>
-                {r.status === "UNDER_MAINTENANCE" ? (
-                  <StatusBadge status="UNDER_MAINTENANCE" />
-                ) : r.availableQuantity === 0 ? (
-                  <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-semibold text-blue-800">
-                    IN USE
-                  </span>
-                ) : (
-                  <StatusBadge status="AVAILABLE" />
+                {/* Show damaged count if any units are in maintenance */}
+                {(r.maintenanceQuantity ?? 0) > 0 && (
+                  <p className="text-[11px] font-semibold text-amber-600 mt-0.5">
+                    {r.maintenanceQuantity} in maintenance
+                  </p>
                 )}
               </td>
-              <td className={cn(td, "text-right")}>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() =>
-                    act(
-                      () => post(`/admin/resources/${r.id}/toggle-maintenance`, { adminEmail }),
-                      "Status updated.",
-                    )
+              <td className={td}>
+                <StatusBadge
+                  status={
+                    (r.maintenanceQuantity ?? 0) >= r.totalQuantity
+                      ? "UNDER_MAINTENANCE"
+                      : r.availableQuantity === 0
+                        ? "IN_USE"
+                        : (r.maintenanceQuantity ?? 0) > 0
+                          ? "UNDER_MAINTENANCE"
+                          : "AVAILABLE"
                   }
-                >
-                  {r.status === "AVAILABLE" ? "Set maintenance" : "Set available"}
-                </Button>
+                />
+              </td>
+              <td className={cn(td, "text-right")}>
+                {/* If units are broken, admin can repair 1 unit at a time! */}
+                {(r.maintenanceQuantity ?? 0) > 0 ? (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="text-emerald-700 border-emerald-300 hover:bg-emerald-50"
+                    onClick={() =>
+                      act(
+                        () =>
+                          post(
+                            `/admin/resources/${r.id}/repair?units=1&adminEmail=${encodeURIComponent(adminEmail)}`,
+                          ),
+                        "1 unit repaired and returned to available stock.",
+                      )
+                    }
+                  >
+                    Mark 1 fixed ({r.maintenanceQuantity ?? 0} left)
+                  </Button>
+                ) : (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() =>
+                      act(
+                        () =>
+                          post(
+                            `/admin/resources/${r.id}/toggle-maintenance?adminEmail=${encodeURIComponent(adminEmail)}`,
+                          ),
+                        "1 unit sent to maintenance.",
+                      )
+                    }
+                  >
+                    Set maintenance
+                  </Button>
+                )}
               </td>
             </tr>
           ))}

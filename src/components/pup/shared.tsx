@@ -17,6 +17,7 @@ const STATUS: Record<string, { label: string; cls: string }> = {
   APPROVED: { label: "Approved", cls: "bg-success-soft text-success" },
   PENDING: { label: "Pending", cls: "bg-warning-soft text-warning" },
   PICKED_UP: { label: "In use", cls: "bg-info-soft text-info" },
+  IN_USE: { label: "In use", cls: "bg-info-soft text-info" }, // <-- ADD THIS LINE
   RETURNED: { label: "Returned", cls: "bg-muted text-muted-foreground" },
   CANCELLED: { label: "Cancelled", cls: "bg-danger-soft text-destructive" },
   REJECTED: { label: "Rejected", cls: "bg-danger-soft text-destructive" },
