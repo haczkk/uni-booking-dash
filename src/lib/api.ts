@@ -39,9 +39,24 @@ export interface Booking {
 }
 
 export interface Availability {
-  resourceType: string;
+  resourceId: number;
+  resourceName: string;
+  resourceType: "ROOM" | "EQUIPMENT";
   totalQuantity: number;
-  bookings: { startTime: string; endTime: string; quantity: number; professor?: string }[];
+  usableQuantity?: number; // <-- Add this
+  maintenanceQuantity?: number; // <-- Add this
+  status?: string; // <-- Add this
+  date: string;
+  operatingHours: string;
+  bookings: Array<{
+    id: number;
+    startTime: string;
+    endTime: string;
+    professor: string;
+    purpose: string;
+    quantity: number;
+    status: string;
+  }>;
 }
 
 export interface ActivePickup {
@@ -146,9 +161,34 @@ export function slotState(av: Availability, start: string, end: string) {
       units += b.quantity ?? 1;
     }
   }
+
   const isRoom = av.resourceType === "ROOM";
-  const left = av.totalQuantity - units;
-  return { booked: isRoom ? conflict !== null : left <= 0, left, isRoom, conflict };
+
+  // Calculate actual working units (Total minus units currently in maintenance)
+  const workingCapacity =
+    av.usableQuantity ?? Math.max(0, av.totalQuantity - (av.maintenanceQuantity ?? 0));
+  const left = Math.max(0, workingCapacity - units);
+
+  // Check if item or room is disabled by maintenance
+  const isMaint =
+    (av.maintenanceQuantity ?? 0) >= av.totalQuantity || av.status === "UNDER_MAINTENANCE";
+  const isBooked = isRoom ? conflict !== null || isMaint : left <= 0;
+
+  const effectiveConflict =
+    conflict ??
+    (isMaint
+      ? {
+          id: 0,
+          startTime: start,
+          endTime: end,
+          professor: "Maintenance",
+          purpose: "Under Maintenance",
+          quantity: 1,
+          status: "UNDER_MAINTENANCE",
+        }
+      : null);
+
+  return { booked: isBooked, left, isRoom, conflict: effectiveConflict };
 }
 
 export function toCsv(rows: Record<string, unknown>[], filename: string) {
