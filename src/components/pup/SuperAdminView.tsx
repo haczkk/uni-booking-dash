@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { toast } from "sonner";
-import { Download, KeyRound, Plus } from "lucide-react";
+import { AlertTriangle, Download, KeyRound, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -40,6 +40,38 @@ export function SuperAdminView() {
   const [q, setQ] = useState("");
   const [actionF, setActionF] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<UserRow | null>(null);
+  const [resetOpen, setResetOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  const deleteAdmin = async () => {
+    if (!deleteTarget) return;
+    setBusy(true);
+    try {
+      const d = await post(`/superadmin/users/${deleteTarget.id}/delete`, { adminEmail });
+      toast.success(d?.message || "Administrator account deleted.");
+      setDeleteTarget(null);
+      refresh();
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const resetYear = async () => {
+    setBusy(true);
+    try {
+      const d = await post(`/superadmin/reset-academic-year`, { adminEmail });
+      toast.success(d?.message || "System reset for the new school year.");
+      setResetOpen(false);
+      refresh();
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const refresh = () => {
     api<UserRow[]>("/superadmin/users", { query: { adminEmail } })
@@ -64,6 +96,15 @@ export function SuperAdminView() {
 
   return (
     <div className="space-y-6">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b pb-4">
+        <div>
+          <h2 className="text-lg font-bold">Super Admin panel</h2>
+          <p className="text-sm text-muted-foreground">Accounts, codes, and system-wide actions.</p>
+        </div>
+        <Button variant="destructive" size="sm" onClick={() => setResetOpen(true)}>
+          <AlertTriangle className="size-4" /> Academic Year Rollover
+        </Button>
+      </div>
       <div className="grid gap-6 lg:grid-cols-[1fr_1.4fr]">
         <Panel
           title="Section registration codes"
@@ -163,6 +204,16 @@ export function SuperAdminView() {
                       }}
                     >
                       {u.active ? "Deactivate" : "Activate"}
+                    </Button>
+                  )}
+                  {u.role === "ADMIN" && (
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      className="ml-2"
+                      onClick={() => setDeleteTarget(u)}
+                    >
+                      <Trash2 className="size-3.5" /> Delete
                     </Button>
                   )}
                 </td>
@@ -272,6 +323,54 @@ export function SuperAdminView() {
               Create account
             </Button>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete administrator</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to permanently delete this administrator account?
+            </DialogDescription>
+          </DialogHeader>
+          {deleteTarget && (
+            <p className="text-sm">
+              <span className="font-medium">{deleteTarget.fullName}</span>{" "}
+              <span className="text-muted-foreground">({deleteTarget.email})</span>
+            </p>
+          )}
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setDeleteTarget(null)} disabled={busy}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={deleteAdmin} disabled={busy}>
+              <Trash2 className="size-4" /> Delete
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={resetOpen} onOpenChange={setResetOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="size-5 text-destructive" /> Academic Year Rollover
+            </DialogTitle>
+            <DialogDescription>
+              This will clear all graduating Class President accounts, past reservation records,
+              and expired section codes from the previous school year, and restore all equipment
+              inventory to full capacity. Staff and Super Admin accounts will remain intact.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setResetOpen(false)} disabled={busy}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={resetYear} disabled={busy}>
+              Confirm & Reset for New School Year
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
