@@ -189,7 +189,7 @@ export function PresidentView() {
                   id="professor"
                   name="professor"
                   required
-                  placeholder="Prof. Juan de la Cruz"
+                  placeholder="e.g. Prof. Juan de la Cruz"
                 />
               </div>
               <div className="space-y-1.5">
@@ -204,7 +204,7 @@ export function PresidentView() {
                 name="purpose"
                 rows={2}
                 required
-                placeholder="e.g., Thesis defense presentation"
+                placeholder="Course - Activity (e.g. Programming 3 - Discussion)"
               />
             </div>
             <Button

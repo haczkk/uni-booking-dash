@@ -1,6 +1,12 @@
 import { useState } from "react";
 import { toast } from "sonner";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -71,18 +77,29 @@ export function AuthDialogs({ mode, setMode }: { mode: Mode; setMode: (m: Mode) 
           onSubmit={(e) => {
             e.preventDefault();
             const f = new FormData(e.currentTarget);
-            mode === "register" ? onRegister(f) : onLogin(f);
+            if (mode === "register") {
+              onRegister(f);
+            } else {
+              onLogin(f);
+            }
           }}
         >
           {mode === "register" && (
-            <Field label="Full name" name="fullName" placeholder="Juan Dela Cruz" />
+            <Field label="Full name" name="fullName" placeholder="e.g. Juan Dela Cruz" />
           )}
-          <Field label="PUP email" name="email" type="email" placeholder="you@iskolarngbayan.pup.edu.ph" />
+          <Field
+            label="PUP Webmail"
+            name="email"
+            type="email"
+            placeholder="you@iskolarngbayan.pup.edu.ph"
+          />
           <Field label="Password" name="password" type="password" />
           {mode === "register" && (
             <Field label="Section registration code" name="code" placeholder="SEC-BSIT-3-1-XXXX" />
           )}
-          {err && <p className="rounded-md bg-danger-soft px-3 py-2 text-sm text-destructive">{err}</p>}
+          {err && (
+            <p className="rounded-md bg-danger-soft px-3 py-2 text-sm text-destructive">{err}</p>
+          )}
           <Button type="submit" variant="maroon" className="w-full" disabled={busy}>
             {busy ? "Please wait…" : mode === "register" ? "Create account" : "Sign in"}
           </Button>
@@ -120,12 +137,25 @@ export function Field({
   return (
     <div className="space-y-1.5">
       <Label htmlFor={name}>{label}</Label>
-      <Input id={name} name={name} type={type} placeholder={placeholder} required={required} defaultValue={defaultValue} />
+      <Input
+        id={name}
+        name={name}
+        type={type}
+        placeholder={placeholder}
+        required={required}
+        defaultValue={defaultValue}
+      />
     </div>
   );
 }
 
-export function ChangePasswordDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boolean) => void }) {
+export function ChangePasswordDialog({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+}) {
   const { user } = useSession();
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
@@ -134,19 +164,26 @@ export function ChangePasswordDialog({ open, onOpenChange }: { open: boolean; on
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Change password</DialogTitle>
-          <DialogDescription>Your current password is verified securely on the server.</DialogDescription>
+          <DialogDescription>
+            Your current password is verified securely on the server.
+          </DialogDescription>
         </DialogHeader>
         <form
           className="space-y-4"
           onSubmit={async (e) => {
             e.preventDefault();
             const f = new FormData(e.currentTarget);
-            if (f.get("newPassword") !== f.get("confirm")) return setErr("New passwords do not match.");
+            if (f.get("newPassword") !== f.get("confirm"))
+              return setErr("New passwords do not match.");
             setBusy(true);
             setErr("");
             try {
               await api("/auth/change-password", {
-                body: { userId: user?.id, currentPassword: f.get("currentPassword"), newPassword: f.get("newPassword") },
+                body: {
+                  userId: user?.id,
+                  currentPassword: f.get("currentPassword"),
+                  newPassword: f.get("newPassword"),
+                },
               });
               toast.success("Password updated successfully!");
               onOpenChange(false);
@@ -160,7 +197,9 @@ export function ChangePasswordDialog({ open, onOpenChange }: { open: boolean; on
           <Field label="Current password" name="currentPassword" type="password" />
           <Field label="New password" name="newPassword" type="password" />
           <Field label="Confirm new password" name="confirm" type="password" />
-          {err && <p className="rounded-md bg-danger-soft px-3 py-2 text-sm text-destructive">{err}</p>}
+          {err && (
+            <p className="rounded-md bg-danger-soft px-3 py-2 text-sm text-destructive">{err}</p>
+          )}
           <Button type="submit" variant="maroon" className="w-full" disabled={busy}>
             Update password
           </Button>

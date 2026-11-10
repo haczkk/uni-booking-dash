@@ -640,7 +640,7 @@ export function AdminView() {
               if (ok) setAddOpen(false);
             }}
           >
-            <Field label="Name" name="name" placeholder="Epson Projector" />
+            <Field label="Name" name="name" placeholder="e.g. Computer Laboratory 1" />
             <div className="space-y-1.5">
               <Label>Type</Label>
               <select name="type" className={cn(sel, "h-9 w-full")}>

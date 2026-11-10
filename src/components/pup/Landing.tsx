@@ -76,8 +76,9 @@ export function Landing({ onRegister }: { onRegister: () => void }) {
             Register as Class President
           </button>
           <p>
-            <span className="text-brand-red">Reservation Tools</span> (Rooms, Projectors, Campus
-            Equipment)
+            <span className="text-brand-red">
+              A Reservation Tool for Rooms and Campus Equipment{" "}
+            </span>
           </p>
         </div>
       </div>

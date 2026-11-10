@@ -151,7 +151,7 @@ export function SuperAdminView() {
               }
             }}
           >
-            <Input name="section" required placeholder="BSIT 3-1" />
+            <Input name="section" required placeholder="e.g. BSIT 2-1" />
             <Button variant="maroon">
               <KeyRound className="size-4" /> Generate
             </Button>
