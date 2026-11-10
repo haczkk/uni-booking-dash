@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { toast } from "sonner";
-import { AlertTriangle, Download, KeyRound, Plus, Trash2 } from "lucide-react";
+import { AlertTriangle, Download, KeyRound, Plus, Trash2, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -14,12 +14,13 @@ import { api, post, toCsv, type AuditLog, type CodeRow, type UserRow } from "@/l
 import { usePolling, useSession } from "@/lib/session";
 import { cn } from "@/lib/utils";
 import { Field } from "./AuthDialogs";
-import { DataTable, Panel, StatusBadge, Tag, td } from "./shared";
+import { DataTable, Panel, StatusBadge, Tag, td, UserBanner } from "./shared";
 
 const ACTIONS = [
   "LOGIN",
   "REGISTER",
   "CREATE_ADMIN",
+  "DELETE_ADMIN",
   "TOGGLE_USER_STATUS",
   "CHANGE_PASSWORD",
   "AUTO_APPROVE",
@@ -28,6 +29,7 @@ const ACTIONS = [
   "PICKUP",
   "RETURN",
   "CANCEL",
+  "ACADEMIC_YEAR_RESET",
 ];
 
 export function SuperAdminView() {
@@ -43,6 +45,7 @@ export function SuperAdminView() {
   const [deleteTarget, setDeleteTarget] = useState<UserRow | null>(null);
   const [resetOpen, setResetOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [deleteCodeTarget, setDeleteCodeTarget] = useState<CodeRow | null>(null);
 
   const deleteAdmin = async () => {
     if (!deleteTarget) return;
@@ -51,6 +54,22 @@ export function SuperAdminView() {
       const d = await post(`/superadmin/users/${deleteTarget.id}/delete`, { adminEmail });
       toast.success(d?.message || "Administrator account deleted.");
       setDeleteTarget(null);
+      refresh();
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleDeleteCode = async () => {
+    if (!deleteCodeTarget) return;
+    setBusy(true);
+    try {
+      const d = await post(`/superadmin/codes/${deleteCodeTarget.id}/delete`, { adminEmail });
+      toast.success(d?.message || "Registration code deleted.");
+      if (lastCode === deleteCodeTarget.code) setLastCode("");
+      setDeleteCodeTarget(null);
       refresh();
     } catch (e) {
       toast.error((e as Error).message);
@@ -98,13 +117,15 @@ export function SuperAdminView() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b pb-4">
         <div>
-          <h2 className="text-lg font-bold">Super Admin panel</h2>
+          <h2 className="text-lg font-bold">Super Admin Panel</h2>
           <p className="text-sm text-muted-foreground">Accounts, codes, and system-wide actions.</p>
         </div>
-        <Button variant="destructive" size="sm" onClick={() => setResetOpen(true)}>
+        {/* Academic Year Rollover in Dark Maroon */}
+        <Button variant="maroon" size="sm" onClick={() => setResetOpen(true)}>
           <AlertTriangle className="size-4" /> Academic Year Rollover
         </Button>
       </div>
+
       <div className="grid gap-6 lg:grid-cols-[1fr_1.4fr]">
         <Panel
           title="Section registration codes"
@@ -135,27 +156,63 @@ export function SuperAdminView() {
               <KeyRound className="size-4" /> Generate
             </Button>
           </form>
+          {/* Clean, Simple Neutral Card (No gold outline) */}
           {lastCode && (
-            <button
-              onClick={() =>
-                navigator.clipboard.writeText(lastCode).then(() => toast.success("Code copied"))
-              }
-              className="mt-4 w-full rounded-lg bg-ink p-4 text-center"
-            >
-              <p className="text-[10px] uppercase tracking-widest text-ink-foreground/60">
-                New code · click to copy
+            <div className="mt-3.5 rounded-lg border bg-card p-3 text-card-foreground">
+              <div className="flex items-center justify-between pb-1.5 px-0.5">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                  Newly Generated Code
+                </span>
+                <span className="text-[10px] font-medium text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                  Active &bull; Unused
+                </span>
+              </div>
+              <div className="flex items-center justify-between gap-2 rounded-md border bg-background px-3 py-2">
+                <span className="font-mono text-lg font-bold tracking-wider text-[#800000]">
+                  {lastCode}
+                </span>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="h-7 px-2.5 text-xs font-semibold text-[#800000] border-[#800000]/30 hover:bg-[#800000]/10"
+                  onClick={() => {
+                    navigator.clipboard
+                      .writeText(lastCode)
+                      .then(() => toast.success("Code copied to clipboard!"));
+                  }}
+                >
+                  <Copy className="size-3 mr-1" /> Copy
+                </Button>
+              </div>
+              <p className="mt-1.5 text-[11px] text-muted-foreground text-center">
+                Provide this code to the designated class president to complete registration.
               </p>
-              <p className="mt-1 font-mono text-xl font-bold text-gold-gradient">{lastCode}</p>
-            </button>
+            </div>
           )}
+
+          {/* Section Codes Table with Delete Option for Unused Codes */}
           <div className="mt-4 max-h-72 overflow-y-auto">
-            <DataTable head={["Code", "Section", "Status"]} empty={codes.length === 0}>
+            <DataTable head={["Code", "Section", "Status", ""]} empty={codes.length === 0}>
               {codes.map((c) => (
-                <tr key={c.code}>
+                <tr key={c.code} className="hover:bg-muted/40">
                   <td className={cn(td, "font-mono text-xs")}>{c.code}</td>
                   <td className={td}>{c.assignedSection}</td>
                   <td className={td}>
                     <StatusBadge status={c.used ? "USED" : "UNUSED"} />
+                  </td>
+                  <td className={cn(td, "w-px whitespace-nowrap text-right")}>
+                    {!c.used && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 w-7 p-0 text-muted-foreground hover:text-[#800000] hover:bg-[#800000]/10"
+                        title="Delete unused code"
+                        onClick={() => setDeleteCodeTarget(c)}
+                      >
+                        <Trash2 className="size-3.5" />
+                      </Button>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -171,7 +228,10 @@ export function SuperAdminView() {
             </Button>
           }
         >
-          <DataTable head={["Name", "Role", "Section", "Status", ""]} empty={users.length === 0}>
+          <DataTable
+            head={["Name", "Role", "Section", "Status", "Actions"]}
+            empty={users.length === 0}
+          >
             {users.map((u) => (
               <tr key={u.id} className="hover:bg-muted/40">
                 <td className={td}>
@@ -185,37 +245,46 @@ export function SuperAdminView() {
                 <td className={td}>
                   <StatusBadge status={u.active ? "ACTIVE" : "INACTIVE"} />
                 </td>
-                <td className={cn(td, "text-right")}>
-                  {u.role !== "SUPER_ADMIN" && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className={u.active ? "text-destructive" : "text-success"}
-                      onClick={async () => {
-                        try {
-                          const d = await post(`/superadmin/users/${u.id}/toggle-status`, {
-                            adminEmail,
-                          });
-                          toast.success(d?.message || "Account updated.");
-                          refresh();
-                        } catch (e) {
-                          toast.error((e as Error).message);
-                        }
-                      }}
-                    >
-                      {u.active ? "Deactivate" : "Activate"}
-                    </Button>
-                  )}
-                  {u.role === "ADMIN" && (
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      className="ml-2"
-                      onClick={() => setDeleteTarget(u)}
-                    >
-                      <Trash2 className="size-3.5" /> Delete
-                    </Button>
-                  )}
+                {/* Organized Action Buttons: Flex row with gap-2 and matching maroon colors */}
+                <td className={cn(td, "text-right whitespace-nowrap")}>
+                  <div className="inline-flex items-center justify-end gap-2">
+                    {u.role !== "SUPER_ADMIN" && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className={cn(
+                          "h-8 px-3 text-xs font-semibold inline-flex items-center justify-center transition-colors",
+                          u.active
+                            ? "text-[#800000] border-[#800000]/40 hover:bg-[#800000]/10 hover:text-[#800000]"
+                            : "text-emerald-700 border-emerald-300 hover:bg-emerald-50",
+                        )}
+                        onClick={async () => {
+                          try {
+                            const d = await post(`/superadmin/users/${u.id}/toggle-status`, {
+                              adminEmail,
+                            });
+                            toast.success(d?.message || "Account updated.");
+                            refresh();
+                          } catch (e) {
+                            toast.error((e as Error).message);
+                          }
+                        }}
+                      >
+                        {u.active ? "Deactivate" : "Activate"}
+                      </Button>
+                    )}
+                    {u.role !== "SUPER_ADMIN" && (
+                      <Button
+                        size="sm"
+                        variant="maroon"
+                        className="h-8 px-3 text-xs font-semibold inline-flex items-center justify-center gap-1.5"
+                        onClick={() => setDeleteTarget(u)}
+                      >
+                        <Trash2 className="size-3.5 shrink-0" />
+                        <span>Delete</span>
+                      </Button>
+                    )}
+                  </div>
                 </td>
               </tr>
             ))}
@@ -285,6 +354,7 @@ export function SuperAdminView() {
         </div>
       </Panel>
 
+      {/* Modal: Create Admin */}
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -326,12 +396,14 @@ export function SuperAdminView() {
         </DialogContent>
       </Dialog>
 
+      {/* Modal: Delete Confirmation (In Dark Maroon) */}
       <Dialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Delete administrator</DialogTitle>
+            <DialogTitle>Delete user account</DialogTitle>
             <DialogDescription>
-              Are you sure you want to permanently delete this administrator account?
+              Are you sure you want to permanently delete this{" "}
+              {deleteTarget?.role.replace("_", " ").toLowerCase()} account?
             </DialogDescription>
           </DialogHeader>
           {deleteTarget && (
@@ -344,31 +416,75 @@ export function SuperAdminView() {
             <Button variant="outline" onClick={() => setDeleteTarget(null)} disabled={busy}>
               Cancel
             </Button>
-            <Button variant="destructive" onClick={deleteAdmin} disabled={busy}>
-              <Trash2 className="size-4" /> Delete
+            <Button variant="maroon" onClick={deleteAdmin} disabled={busy}>
+              <Trash2 className="size-4 mr-1" /> Delete
             </Button>
           </div>
         </DialogContent>
       </Dialog>
 
+      {/* Modal: Academic Year Rollover Confirmation (In Dark Maroon) */}
       <Dialog open={resetOpen} onOpenChange={setResetOpen}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="size-5 text-destructive" /> Academic Year Rollover
+              <AlertTriangle className="size-5 text-[#800000]" /> Academic Year Rollover
             </DialogTitle>
             <DialogDescription>
               This will clear all graduating Class President accounts, past reservation records,
-              and expired section codes from the previous school year, and restore all equipment
-              inventory to full capacity. Staff and Super Admin accounts will remain intact.
+              expired section codes from the previous school year, all equipment inventory, and all
+              audit logs. Staff and Super Admin accounts will remain intact.
             </DialogDescription>
           </DialogHeader>
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={() => setResetOpen(false)} disabled={busy}>
               Cancel
             </Button>
-            <Button variant="destructive" onClick={resetYear} disabled={busy}>
+            <Button variant="maroon" onClick={resetYear} disabled={busy}>
               Confirm & Reset for New School Year
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Registration Code Modal */}
+      <Dialog
+        open={deleteCodeTarget !== null}
+        onOpenChange={(open) => !open && setDeleteCodeTarget(null)}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete Registration Code</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to permanently delete this unused registration code?
+            </DialogDescription>
+          </DialogHeader>
+
+          {deleteCodeTarget && (
+            <div className="rounded-lg border bg-muted/20 p-3 text-sm">
+              <span className="text-[10px] uppercase font-bold text-muted-foreground block">
+                Registration Code
+              </span>
+              <p className="font-mono font-bold text-base text-[#800000] mt-0.5">
+                {deleteCodeTarget.code}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Assigned Section: <strong>{deleteCodeTarget.assignedSection}</strong>
+              </p>
+            </div>
+          )}
+
+          <div className="flex justify-end gap-2 pt-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setDeleteCodeTarget(null)}
+              disabled={busy}
+            >
+              Cancel
+            </Button>
+            <Button variant="maroon" size="sm" onClick={handleDeleteCode} disabled={busy}>
+              <Trash2 className="size-4 mr-1" /> Delete Code
             </Button>
           </div>
         </DialogContent>

@@ -98,6 +98,7 @@ export interface UserRow {
 }
 
 export interface CodeRow {
+  id: number;
   code: string;
   assignedSection: string;
   used: boolean;
@@ -144,7 +145,7 @@ export async function api<T = any>(
 export const post = <T = any>(path: string, query?: Record<string, any>, body?: unknown) =>
   api<T>(path, { method: "POST", query, body });
 
-export const SLOTS = Array.from({ length: 12 }, (_, i) => {
+export const SLOTS = Array.from({ length: 14 }, (_, i) => {
   const h = 7 + i;
   const f = (n: number) => `${String(n).padStart(2, "0")}:00`;
   return { start: f(h), end: f(h + 1) };

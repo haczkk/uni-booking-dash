@@ -1,3 +1,4 @@
+import { useSession } from "@/lib/session";
 import type { ReactNode } from "react";
 import pupSeal from "@/assets/pup-seal.png.asset.json";
 import { cn } from "@/lib/utils";
@@ -114,6 +115,53 @@ export function DataTable({
           )}
         </tbody>
       </table>
+    </div>
+  );
+}
+
+export function UserBanner() {
+  const { user } = useSession();
+  if (!user) return null;
+
+  const isPresident = user.role === "CLASS_PRESIDENT";
+
+  return (
+    <div className="rounded-xl border bg-card p-5 shadow-card flex flex-wrap items-center justify-between gap-4">
+      <div>
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-[#800000]">
+            {isPresident ? "Authorized Class President" : user.role.replace("_", " ")}
+          </span>
+          {isPresident && user.section && user.section !== "N/A" && (
+            <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-semibold text-secondary-foreground">
+              {user.section}
+            </span>
+          )}
+        </div>
+        <h2 className="mt-1 text-xl font-bold tracking-tight text-foreground">{user.fullName}</h2>
+      </div>
+
+      {/* Metadata on the right */}
+      <div className="flex flex-wrap items-center gap-8 text-sm">
+        <div>
+          <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
+            PUP Webmail
+          </p>
+          <p className="mt-0.5 font-medium text-xs sm:text-sm text-foreground">{user.email}</p>
+        </div>
+
+        {/* ONLY Class Presidents show the Class Section */}
+        {isPresident && (
+          <div>
+            <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
+              Class Section
+            </p>
+            <p className="mt-0.5 font-medium text-xs sm:text-sm text-foreground">
+              {user.section ?? "N/A"}
+            </p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

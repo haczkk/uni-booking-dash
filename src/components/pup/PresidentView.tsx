@@ -17,10 +17,10 @@ import {
 } from "@/lib/api";
 import { usePolling, useSession } from "@/lib/session";
 import { cn } from "@/lib/utils";
-import { DataTable, Panel, StatusBadge, td } from "./shared";
+import { DataTable, Panel, StatusBadge, td, UserBanner } from "./shared";
 import { VoucherDialog } from "./Voucher";
 
-const HOURS = Array.from({ length: 13 }, (_, i) => `${String(7 + i).padStart(2, "0")}:00`);
+const HOURS = Array.from({ length: 15 }, (_, i) => `${String(7 + i).padStart(2, "0")}:00`);
 const sel =
   "h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring";
 
@@ -121,25 +121,6 @@ export function PresidentView() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-gold/40 bg-gold-soft px-5 py-4">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-widest text-gold-foreground/70">
-            Authorized class president
-          </p>
-          <p className="mt-0.5 font-display text-xl font-semibold">{user?.fullName}</p>
-        </div>
-        <div className="flex flex-wrap gap-6 text-sm">
-          <div>
-            <p className="text-muted-foreground">PUP Webmail</p>
-            <p className="font-medium">{user?.email}</p>
-          </div>
-          <div>
-            <p className="text-muted-foreground">Section</p>
-            <p className="font-medium">{user?.section ?? "—"}</p>
-          </div>
-        </div>
-      </div>
-
       <div className="grid gap-6 lg:grid-cols-[380px_1fr]">
         <Panel
           title="Reserve a resource"
@@ -256,10 +237,20 @@ export function PresidentView() {
           {avErr && (
             <p className="rounded-md bg-danger-soft px-3 py-2 text-sm text-destructive">{avErr}</p>
           )}
-          {!av && !avErr && (
+          {resources.length === 0 && (
+            <p className="py-10 text-center text-sm text-muted-foreground">
+              No campus facilities or equipment have been registered for this school year yet.
+            </p>
+          )}
+          {resources.length > 0 && !resourceId && (
+            <p className="py-10 text-center text-sm text-muted-foreground">
+              Please select a resource above to view its timetable.
+            </p>
+          )}
+          {resourceId && !av && !avErr && (
             <p className="py-10 text-center text-sm text-muted-foreground">Loading schedule…</p>
           )}
-          {av && (
+          {av && resources.length > 0 && (
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-4">
               {SLOTS.map((s) => {
                 const st = slotState(av, s.start, s.end);
