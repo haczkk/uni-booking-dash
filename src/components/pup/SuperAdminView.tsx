@@ -388,7 +388,7 @@ export function SuperAdminView() {
           >
             <Field label="Full name" name="fullName" />
             <Field label="Email" name="email" type="email" />
-            <Field label="Temporary password" name="password" type="password" />
+            <Field label="Password" name="password" type="password" />
             <Button variant="maroon" className="w-full">
               Create account
             </Button>
