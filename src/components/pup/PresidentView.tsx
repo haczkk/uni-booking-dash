@@ -39,16 +39,52 @@ export function PresidentView() {
   const [statusF, setStatusF] = useState("");
   const [voucher, setVoucher] = useState<Booking | null>(null);
   const [busy, setBusy] = useState(false);
+  const [qty, setQty] = useState<number | "">(1);
 
-  useEffect(() => {
+  // Sort Rooms alphabetically A to Z
+  const sortedRooms = useMemo(() => {
+    return resources.filter((r) => r.type === "ROOM").sort((a, b) => a.name.localeCompare(b.name));
+  }, [resources]);
+
+  // Sort Equipment alphabetically A to Z
+  const sortedEquipment = useMemo(() => {
+    return resources
+      .filter((r) => r.type === "EQUIPMENT")
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [resources]);
+
+  const selectedResource = resources.find((r) => r.id === resourceId);
+
+  const loadResources = () => {
     api<Resource[]>("/reservations/resources")
       .then((r) => {
         setResources(r);
-        const first = r.find((x) => x.status !== "UNDER_MAINTENANCE");
-        if (first) setResourceId(first.id);
+        // If no resource selected yet, pick the first working one
+        setResourceId((prevId) => {
+          if (!prevId) {
+            const first = r.find((x) => x.status !== "UNDER_MAINTENANCE");
+            return first ? first.id : "";
+          }
+          // If the currently selected resource was just placed under maintenance by an admin,
+          // automatically switch the view to a functional room!
+          const current = r.find((x) => x.id === prevId);
+          if (current && current.status === "UNDER_MAINTENANCE") {
+            const nextWorking = r.find((x) => x.status !== "UNDER_MAINTENANCE");
+            if (nextWorking) {
+              toast.info(
+                `${current.name} was placed under maintenance. Switched to ${nextWorking.name}.`,
+              );
+              return nextWorking.id;
+            }
+          }
+          return prevId;
+        });
       })
-      .catch((e) => toast.error(e.message));
-  }, []);
+      .catch(() => {});
+  };
+
+  // Poll resources alongside availability so maintenance changes reflect in real-time
+  usePolling(loadResources, 5000, []);
 
   const loadAv = () => {
     if (!resourceId) return;
@@ -76,12 +112,21 @@ export function PresidentView() {
 
   const submit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!resourceId) {
+      toast.error("Please select a room or equipment to reserve.");
+      return;
+    }
     if (end <= start) {
       toast.error("End time must be after start time.");
       return;
     }
     const f = new FormData(e.currentTarget);
     setBusy(true);
+
+    // Guaranteed safe quantity
+    const isRoom = selectedResource?.type === "ROOM";
+    const finalQuantity = isRoom ? 1 : Math.max(1, Number(qty) || 1);
+
     try {
       const d = await api<{ status: string; message: string }>("/reservations/request", {
         body: {
@@ -92,13 +137,14 @@ export function PresidentView() {
           endTime: end + ":00",
           professorName: f.get("professor"),
           purpose: f.get("purpose"),
-          requestedQuantity: Number(f.get("qty")),
+          requestedQuantity: finalQuantity,
         },
       });
       if (d.status === "AUTO_APPROVED")
         toast.success("Reservation auto-approved!", { description: d.message });
       else toast.warning("Sent to admin for review", { description: d.message });
       (e.target as HTMLFormElement).reset();
+      setQty(1);
       loadAv();
       loadMine();
     } catch (err) {
@@ -127,21 +173,67 @@ export function PresidentView() {
           description="Requests without conflicts are approved instantly."
         >
           <form onSubmit={submit} className="space-y-4">
-            <div className="space-y-1.5">
-              <Label>Resource</Label>
-              <select
-                className={sel}
-                value={resourceId}
-                onChange={(e) => setResourceId(Number(e.target.value))}
-                required
-              >
-                {resources.map((r) => (
-                  <option key={r.id} value={r.id} disabled={r.status === "UNDER_MAINTENANCE"}>
-                    {r.name} · {r.type} ({r.availableQuantity}/{r.totalQuantity})
-                    {r.status === "UNDER_MAINTENANCE" ? " — maintenance" : ""}
-                  </option>
-                ))}
-              </select>
+            {/* Two Separated Alphabetical Dropdowns without SELECTED tag */}
+            <div className="space-y-3">
+              {/* Dropdown 1: Rooms & Facilities */}
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold text-slate-700">Room / Laboratory</Label>
+                <select
+                  className={sel}
+                  value={selectedResource?.type === "ROOM" ? resourceId : ""}
+                  onChange={(e) => {
+                    const val = e.target.value ? Number(e.target.value) : "";
+                    setResourceId(val);
+                    setQty(1);
+                  }}
+                >
+                  <option value="">-- Select a Room or Laboratory --</option>
+                  {sortedRooms.map((r) => (
+                    <option
+                      key={r.id}
+                      value={r.id}
+                      disabled={
+                        r.status === "UNDER_MAINTENANCE" ||
+                        (r.maintenanceQuantity ?? 0) >= r.totalQuantity
+                      }
+                    >
+                      {r.name}{" "}
+                      {r.status === "UNDER_MAINTENANCE" ||
+                      (r.maintenanceQuantity ?? 0) >= r.totalQuantity
+                        ? "— [UNDER MAINTENANCE]"
+                        : ""}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Dropdown 2: Equipment */}
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold text-slate-700">Campus Equipment</Label>
+                <select
+                  className={sel}
+                  value={selectedResource?.type === "EQUIPMENT" ? resourceId : ""}
+                  onChange={(e) => {
+                    const val = e.target.value ? Number(e.target.value) : "";
+                    setResourceId(val);
+                    if (qty === "" || qty < 1) setQty(1);
+                  }}
+                >
+                  <option value="">-- Select Campus Equipment --</option>
+                  {sortedEquipment.map((r) => {
+                    const isBroken =
+                      r.status === "UNDER_MAINTENANCE" ||
+                      (r.maintenanceQuantity ?? 0) >= r.totalQuantity;
+                    const usable = Math.max(0, r.totalQuantity - (r.maintenanceQuantity ?? 0));
+                    return (
+                      <option key={r.id} value={r.id} disabled={isBroken}>
+                        {r.name} ({usable} of {r.totalQuantity} usable){" "}
+                        {isBroken ? "— [UNDER MAINTENANCE]" : ""}
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
             </div>
             <div className="space-y-1.5">
               <Label>Date</Label>
@@ -194,7 +286,21 @@ export function PresidentView() {
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="qty">Qty</Label>
-                <Input id="qty" name="qty" type="number" min={1} defaultValue={1} required />
+                <Input
+                  id="qty"
+                  name="qty"
+                  type="number"
+                  min={1}
+                  max={
+                    selectedResource?.type === "EQUIPMENT"
+                      ? selectedResource.totalQuantity
+                      : undefined
+                  }
+                  value={qty}
+                  onChange={(e) => setQty(e.target.value === "" ? "" : Number(e.target.value))}
+                  placeholder="1"
+                  required
+                />
               </div>
             </div>
             <div className="space-y-1.5">
@@ -319,7 +425,7 @@ export function PresidentView() {
         }
       >
         <DataTable
-          head={["Resource", "Schedule", "Professor", "Status", ""]}
+          head={["Resource", "Schedule", "Professor", "Status", "Actions"]}
           empty={filtered.length === 0}
         >
           {filtered.map((r) => (
@@ -335,27 +441,43 @@ export function PresidentView() {
                 </p>
               </td>
               <td className={td}>{r.professorName}</td>
+
+              {/* Status column: Shows the badge + exact reason if cancelled/rejected */}
               <td className={td}>
                 <StatusBadge status={r.status} />
+                {r.cancellationReason && (r.status === "CANCELLED" || r.status === "REJECTED") && (
+                  <p className="text-[11px] font-medium text-[#800000] mt-1 max-w-56 leading-tight">
+                    {r.cancellationReason}
+                  </p>
+                )}
               </td>
-              <td className={cn(td, "text-right whitespace-nowrap")}>
-                {(r.status === "AUTO_APPROVED" || r.status === "APPROVED") && r.pickupToken && (
-                  <Button size="sm" variant="secondary" onClick={() => setVoucher(r)}>
-                    <Ticket className="size-3.5" />
-                    View pass
-                  </Button>
-                )}
-                {["AUTO_APPROVED", "APPROVED", "PENDING"].includes(r.status) && (
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="ml-1 text-destructive"
-                    onClick={() => cancel(r.id)}
-                  >
-                    <X className="size-3.5" />
-                    Cancel
-                  </Button>
-                )}
+
+              {/* Centered Actions Column: Maroon Cancel button + clean View Pass button */}
+              <td className={cn(td, "text-center whitespace-nowrap w-px")}>
+                <div className="inline-flex items-center justify-center gap-2">
+                  {(r.status === "AUTO_APPROVED" || r.status === "APPROVED") && r.pickupToken && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-8 px-2.5 text-xs font-medium"
+                      onClick={() => setVoucher(r)}
+                    >
+                      <Ticket className="size-3.5 mr-1" />
+                      View pass
+                    </Button>
+                  )}
+                  {["AUTO_APPROVED", "APPROVED", "PENDING"].includes(r.status) && (
+                    <Button
+                      size="sm"
+                      variant="maroon"
+                      className="h-8 px-2.5 text-xs font-semibold inline-flex items-center justify-center gap-1"
+                      onClick={() => cancel(r.id)}
+                    >
+                      <X className="size-3.5 shrink-0" />
+                      Cancel
+                    </Button>
+                  )}
+                </div>
               </td>
             </tr>
           ))}

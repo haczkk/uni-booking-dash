@@ -219,11 +219,13 @@ export function AdminView() {
               </td>
               <td className={td}>{r.professorName}</td>
               <td className={cn(td, "max-w-48 truncate")}>{r.purpose}</td>
-              <td className={cn(td, "w-px whitespace-nowrap text-right")}>
-                <div className="inline-flex items-center justify-end gap-1.5">
+              <td className={cn(td, "whitespace-nowrap text-right")}>
+                <div className="inline-flex items-center justify-end gap-2">
+                  {/* Approve Button: Matching outline style of Manage button with green border */}
                   <Button
                     size="sm"
-                    variant="success"
+                    variant="outline"
+                    className="h-8 px-3 text-xs font-semibold border-emerald-600 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800"
                     onClick={() =>
                       act(
                         () => post(`/admin/reservations/${r.id}/approve`, { adminEmail }),
@@ -233,10 +235,12 @@ export function AdminView() {
                   >
                     Approve
                   </Button>
+
+                  {/* Reject Button: Styled in Dark Maroon */}
                   <Button
                     size="sm"
-                    variant="ghost"
-                    className="text-destructive hover:bg-destructive/10"
+                    variant="maroon"
+                    className="h-8 px-3 text-xs font-semibold"
                     onClick={() => setRejecting(r)}
                   >
                     Reject
@@ -682,9 +686,9 @@ export function AdminView() {
               name="reason"
               required
               rows={3}
-              placeholder="Room already reserved for a department event."
+              placeholder="e.g. Room already reserved for a department event."
             />
-            <Button variant="destructive" className="w-full">
+            <Button variant="maroon" className="w-full">
               Reject request
             </Button>
           </form>

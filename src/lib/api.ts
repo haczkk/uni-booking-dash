@@ -35,6 +35,7 @@ export interface Booking {
   requestedQuantity?: number;
   status: string;
   pickupToken?: string;
+  cancellationReason?: string;
   president?: { fullName: string; section?: string };
 }
 
@@ -175,19 +176,17 @@ export function slotState(av: Availability, start: string, end: string) {
     (av.maintenanceQuantity ?? 0) >= av.totalQuantity || av.status === "UNDER_MAINTENANCE";
   const isBooked = isRoom ? conflict !== null || isMaint : left <= 0;
 
-  const effectiveConflict =
-    conflict ??
-    (isMaint
-      ? {
-          id: 0,
-          startTime: start,
-          endTime: end,
-          professor: "Maintenance",
-          purpose: "Under Maintenance",
-          quantity: 1,
-          status: "UNDER_MAINTENANCE",
-        }
-      : null);
+  const effectiveConflict = isMaint
+    ? {
+        id: 0,
+        startTime: start,
+        endTime: end,
+        professor: conflict ? `Maintenance (${conflict.professor})` : "Under Maintenance",
+        purpose: "Facility Under Maintenance",
+        quantity: 1,
+        status: "UNDER_MAINTENANCE",
+      }
+    : conflict;
 
   return { booked: isBooked, left, isRoom, conflict: effectiveConflict };
 }
